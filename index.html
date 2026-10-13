@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Watch the @nelkboys @saliimthedream catfish our CEO. — nothing else.</title>
 <meta name="description" content="Salim catfished Ben. Big Beauty has been catfishing your skin for years. Six real ingredients, real customers, the real Ben. 20% off with code CATFISHED.">
+<!-- Google Analytics: same GA4 property as thenothingelse.com -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8R9EGVS2WS"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-8R9EGVS2WS',{linker:{domains:['thenothingelse.com']}});</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
@@ -194,11 +197,6 @@ details .in ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
 /* faq */
 .faq .wrap{display:grid;gap:18px;max-width:760px}
 
-/* capture */
-.capture .wrap{display:grid;gap:18px;text-align:center;max-width:620px}
-.capture form{display:grid;gap:10px}
-.capture input{font:inherit;padding:14px 16px;border:2px solid var(--ink);border-radius:var(--radius);width:100%;background:#fff}
-@media (min-width:600px){.capture form{grid-template-columns:1fr auto}}
 
 /* footer */
 footer{background:var(--footer);color:#fff;padding-block:48px 32px;font-size:.85rem}
@@ -384,20 +382,6 @@ footer img{height:22px;width:auto}
   </div>
 </section>
 
-<!-- 11 second cta + capture -->
-<section class="capture" data-section="capture" id="capture">
-  <div class="wrap">
-    <h2>Still here? Good.</h2>
-    <a class="btn" href="#buy" data-track="second_cta">Get the kit · <span data-discount="page">20</span>% off</a>
-    <p class="lede" style="margin-inline:auto">Don’t get catfished by Big Beauty either. Ingredient truths, no spam.</p>
-    <form id="capForm" novalidate>
-      <label class="sr" for="capEmail">Email</label>
-      <input type="email" id="capEmail" placeholder="you@example.com" required>
-      <button class="btn" type="submit">Join</button>
-    </form>
-    <p class="small muted" id="capMsg"></p>
-  </div>
-</section>
 
 </main>
 
@@ -484,6 +468,7 @@ var CONFIG = {
   function track(ev,data){
     var payload=Object.assign({event:ev,page:'catfished'},data||{});
     window.dataLayer=window.dataLayer||[]; window.dataLayer.push(payload);
+    if(window.gtag&&ev!=='page_view')gtag('event',ev,data||{});
     if(window.fbq&&ev==='add_to_cart')fbq('track','AddToCart',{content_name:payload.tier});
     if(window.ttq&&ev==='add_to_cart')ttq.track('AddToCart',{content_name:payload.tier});
     if(window.console&&(location.search.indexOf('dev=1')>-1||location.hash==='#dev'))console.log('[track]',payload);
@@ -666,12 +651,6 @@ var CONFIG = {
   $('#exitClose').addEventListener('click',closeExit); $('#exitDismiss').addEventListener('click',function(){track('exit_dismiss');closeExit()});
   $('#exitTake').addEventListener('click',function(){track('exit_take');switchToExitCode();closeExit();$('#buy').scrollIntoView({behavior:reduced?'auto':'smooth'})});
 
-  /* ---------- email capture (wire to Klaviyo / Shopify Email on port) ---------- */
-  $('#capForm').addEventListener('submit',function(e){
-    e.preventDefault(); var em=$('#capEmail'), msg=$('#capMsg');
-    if(!em.value||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value)){msg.textContent='That email doesn’t look right.';em.focus();return}
-    track('email_capture'); msg.textContent='You’re in. No catfish, no spam.'; em.value='';
-  });
 
 })();
 </script>
