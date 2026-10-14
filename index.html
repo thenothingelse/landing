@@ -218,14 +218,6 @@ footer img{height:22px;width:auto}
 .sticky .t s{opacity:.6}
 .sticky .btn{margin-left:auto;background:#fff;color:#000;border-color:#fff;width:auto;padding:12px 18px;white-space:nowrap}
 
-/* exit popup */
-.exit{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:16px}
-.exit[hidden]{display:none} /* author display:grid otherwise beats [hidden] */
-.exit .box{background:#fff;color:#000;max-width:420px;width:100%;padding:28px 22px;border-radius:var(--radius);display:grid;gap:12px;position:relative;box-shadow:6px 6px 0 var(--accent)}
-.exit .x{position:absolute;top:6px;right:6px;background:transparent;border:0;font-size:1.4rem;cursor:pointer;padding:6px 10px}
-.exit h2{font-size:2.1rem}
-.exit .dismiss{background:transparent;border:0;color:var(--muted);text-decoration:underline;font-size:.82rem;cursor:pointer;width:max-content;padding:0}
-
 </style>
 </head>
 <body>
@@ -408,19 +400,6 @@ footer img{height:22px;width:auto}
   <a class="btn" href="#buy" data-track="sticky_cta">Get the kit</a>
 </div>
 
-<!-- exit popup -->
-<div class="exit" id="exit" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
-  <div class="box">
-    <button type="button" class="x" id="exitClose" aria-label="Close">×</button>
-    <span class="kicker">Wait</span>
-    <h2 id="exitTitle">Swiping left on us? NOPE.</h2>
-    <p>Fair. Ben left too. But before you go: <span data-discount="exit">25</span>% off the kit instead of <span data-discount="page">20</span>%, today only. No wig required.</p>
-    <div class="codebox"><span class="small muted">Your code</span><span class="c" data-code="exit">NOPE</span><button type="button" data-copy-code="exit" data-track="copy_exit_code">Copy</button></div>
-    <button type="button" class="btn" id="exitTake">Fine, I’ll take it</button>
-    <button type="button" class="dismiss" id="exitDismiss">No thanks, I like preservatives</button>
-  </div>
-</div>
-
 <script>
 /* =========================================================================
    CONFIG — everything you are likely to change lives here.
@@ -429,8 +408,8 @@ var CONFIG = {
   store: 'https://thenothingelse.com',
   pageHandle: 'catfished',                 // Shopify page handle once ported
   deadline: 'Sunday',
-  discount: { page: 20, exit: 25 },        // percent
-  codes:    { page: 'CATFISHED', exit: 'NOPE' },
+  discount: { page: 20 },                  // percent
+  codes:    { page: 'CATFISHED' },
   facts:    { minutes: '[x]', customer: '[Customer]', weeks: '8', reviews: '112' },
   links:    { video: 'https://www.youtube.com/shorts/ILEMflru79Q' },
   products: {                              // variant ids from products.json
@@ -478,9 +457,7 @@ var CONFIG = {
 
   /* ---------- config → DOM ---------- */
   $$('[data-code="page"]').forEach(function(e){e.textContent=CONFIG.codes.page});
-  $$('[data-code="exit"]').forEach(function(e){e.textContent=CONFIG.codes.exit});
   $$('[data-discount="page"]').forEach(function(e){e.textContent=CONFIG.discount.page});
-  $$('[data-discount="exit"]').forEach(function(e){e.textContent=CONFIG.discount.exit});
   $$('[data-deadline]').forEach(function(e){e.textContent=CONFIG.deadline});
   $$('[data-fact]').forEach(function(e){var f=CONFIG.facts[e.getAttribute('data-fact')];if(f!==undefined)e.textContent=f});
   $$('[data-link="video"]').forEach(function(e){e.href=CONFIG.links.video});
@@ -514,7 +491,6 @@ var CONFIG = {
   }
   renderTiers();
   $('#buyBtn').addEventListener('click',function(){track('add_to_cart',{tier:selected,code:activeCode})});
-  function switchToExitCode(){activeCode=CONFIG.codes.exit;activeDiscount=CONFIG.discount.exit;$$('[data-code="page"]').forEach(function(e){e.textContent=activeCode});$$('[data-discount="page"]').forEach(function(e){e.textContent=activeDiscount});$$('[data-copy-code="page"]').forEach(function(b){b.setAttribute('data-copy-code','exit')});renderTiers()}
 
   /* ---------- before / after slider ---------- */
   var ba=$('#ba'), range=$('#baRange'), touched=false;
@@ -611,46 +587,6 @@ var CONFIG = {
     new IntersectionObserver(function(es){pastHero=!es[0].isIntersecting&&es[0].boundingClientRect.top<0;stickyUpdate()},{threshold:0}).observe($('#hero'));
     new IntersectionObserver(function(es){buyVisible=es[0].isIntersecting;stickyUpdate()},{threshold:.15}).observe($('#buy'));
   }
-
-  /* ---------- exit intent: only after the page has lost focus (tab/app switch) ---------- */
-  var exit=$('#exit'), shown=sstore('exitIntent')==='1', loadedAt=Date.now(), lastFocus=null, sawFocus=pageIsFocusedBoot(), armed=false;
-  try{sessionStorage.removeItem('exitShown')}catch(e){} /* old key from earlier builds */
-  function pageIsFocusedBoot(){try{return !document.hidden&&document.hasFocus()}catch(e){return !document.hidden}}
-  function pageIsFocused(){return !document.hidden&&document.hasFocus()}
-  function openExit(reason){
-    if(shown||exit.hidden===false||Date.now()-loadedAt<2000||!armed)return false;
-    shown=true; sstore('exitIntent','1'); lastFocus=document.activeElement; exit.hidden=false; track('exit_popup',{reason:reason});
-    /* focus the CTA only once the page is focused again, so we don't yank the window back */
-    if(pageIsFocused())$('#exitTake').focus();
-    else{
-      var focusWhenBack=function(){
-        if(!pageIsFocused()||exit.hidden)return;
-        window.removeEventListener('focus',focusWhenBack);
-        document.removeEventListener('visibilitychange',focusWhenBack);
-        $('#exitTake').focus();
-      };
-      window.addEventListener('focus',focusWhenBack);
-      document.addEventListener('visibilitychange',focusWhenBack);
-    }
-    return true;
-  }
-  function closeExit(){exit.hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
-  function onFocusChange(){
-    var focused=pageIsFocused();
-    if(focused)sawFocus=true;
-    /* must have been focused at least once, then lost focus */
-    if(sawFocus&&!focused)openExit('blur');
-  }
-  setTimeout(function(){armed=true;onFocusChange()},2000);
-  document.addEventListener('visibilitychange',onFocusChange);
-  window.addEventListener('blur',function(){setTimeout(onFocusChange,0)});
-  window.addEventListener('focus',function(){setTimeout(onFocusChange,0)});
-  setInterval(onFocusChange,500);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!exit.hidden)closeExit()});
-  exit.addEventListener('click',function(e){if(e.target===exit)closeExit()});
-  $('#exitClose').addEventListener('click',closeExit); $('#exitDismiss').addEventListener('click',function(){track('exit_dismiss');closeExit()});
-  $('#exitTake').addEventListener('click',function(){track('exit_take');switchToExitCode();closeExit();$('#buy').scrollIntoView({behavior:reduced?'auto':'smooth'})});
-
 
 })();
 </script>
